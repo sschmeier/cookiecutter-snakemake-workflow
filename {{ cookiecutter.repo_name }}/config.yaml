@@ -1,7 +1,7 @@
 # This file should contain everything to configure the workflow on a global scale.
 
 # the result directory
-results: "analysis"
+results: analysis
 
 # path or URL to sample sheet (TSV format, columns: sample, condition, ...)
 samples: samples.tsv
