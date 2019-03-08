@@ -1,8 +1,39 @@
 # The main entry point of your workflow.
 # After configuring, running snakemake -n in a clone of this repository should successfully execute a dry-run of the workflow.
+import pandas as pd
+from os.path import join, abspath
+from snakemake.utils import validate, min_version
+min_version("{{cookiecutter.min_snakemake_version}}")
+
+## =============================================================================
+## SETUP
+## =============================================================================
+
+## define global Singularity image for reproducibility
+## USE: "--use-singularity --use-conda" to run all jobs in container
+singularity: "docker://continuumio/miniconda3" #":4.5.11"
 
 
+## =======================================================================
+## LOAD VARIABLES FROM CONFIGFILE
+## different config-file can be submitted on command-line via --configfile
 configfile: "config.yaml"
+validate(config, schema="schemas/config.schema.yaml")
+            
+##### Define some directories #####
+DIR_BASE = config["results"]
+DIR_LOGS = join(DIR_BASE, "logs")
+DIR_BM   = join(DIR_BASE, "benchmarks")
+DIR_RES  = join(DIR_BASE, "results")
+
+
+##### load sample sheets #####
+samples = pd.read_table(config["samples"]).set_index("sample", drop=False)
+validate(samples, schema="schemas/samples.schema.yaml")
+
+units = pd.read_table(config["units"], dtype=str).set_index(["sample", "unit"], drop=False)
+units.index = units.index.set_levels([i.astype(str) for i in units.index.levels])  # enforce str in index
+validate(units, schema="schemas/units.schema.yaml")
 
 
 rule all:
@@ -11,4 +42,6 @@ rule all:
         # Subsequent target rules can be specified below. They should start with all_*.
 
 
-include: "rules/other.smk"
+##### load rules #####
+include: "rules/common.smk"
+
